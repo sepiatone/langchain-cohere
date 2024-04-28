@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import cohere
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from .utils import _create_retry_decorator
@@ -47,7 +47,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
-    cohere_api_key: Optional[str] = None
+    cohere_api_key: Optional[SecretStr] = None
 
     max_retries: int = 3
     """Maximum number of retries to make when generating."""

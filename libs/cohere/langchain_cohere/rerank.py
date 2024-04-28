@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import cohere
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -19,7 +19,7 @@ class CohereRerank(BaseDocumentCompressor):
     """Number of documents to return."""
     model: str = "rerank-english-v3.0"
     """Model to use for reranking."""
-    cohere_api_key: Optional[str] = None
+    cohere_api_key: Optional[SecretStr] = None
     """Cohere API key. Must be specified directly or via environment variable 
         COHERE_API_KEY."""
     user_agent: str = "langchain:partner"

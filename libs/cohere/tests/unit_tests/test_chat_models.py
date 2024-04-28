@@ -1,10 +1,13 @@
 """Test chat model integration."""
 import typing
+from typing import cast
 from unittest.mock import patch
 
 import pytest
 from cohere.types import NonStreamedChatResponse, ToolCall
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_cohere.chat_models import ChatCohere, _messages_to_cohere_tool_results
 
@@ -157,3 +160,52 @@ def test_messages_to_cohere_tool_results() -> None:
     messages = [human_message, ai_message, another_tool_message]
     results = _messages_to_cohere_tool_results(messages)
     assert results == expected
+
+
+def test_api_key_is_secret_string() -> None:
+    """Test that the API key is stored as a SecretStr."""
+    chat_model = ChatCohere(
+        cohere_api_key="secret-api-key",
+        model="foo",
+    )
+    assert isinstance(chat_model.cohere_api_key, SecretStr)
+
+
+def test_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test that the API key is masked when passed from an environment variable."""
+    monkeypatch.setenv("COHERE_API_KEY", "secret-api-key")
+    chat_model = ChatCohere(
+        model="foo",
+    )
+    print(chat_model.cohere_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test that the API key is masked when passed via the constructor."""
+    chat_model = ChatCohere(
+        cohere_api_key="secret-api-key",
+        model="foo",
+    )
+    print(chat_model.cohere_api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that the actual secret value is correctly retrieved."""
+    chat_model = ChatCohere(
+        cohere_api_key="secret-api-key",
+        model="foo",
+    )
+    assert (
+        cast(SecretStr, chat_model.cohere_api_key).get_secret_value()
+        == "secret-api-key"
+    )
