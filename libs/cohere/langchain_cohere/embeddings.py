@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import cohere
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from .utils import _create_retry_decorator
 
@@ -68,20 +68,20 @@ class CohereEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cohere_api_key = get_from_dict_or_env(
-            values, "cohere_api_key", "COHERE_API_KEY"
+        values["cohere_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
         )
         request_timeout = values.get("request_timeout")
 
         client_name = values["user_agent"]
         values["client"] = cohere.Client(
-            cohere_api_key,
+            api_key=values["cohere_api_key"].get_secret_value(),
             timeout=request_timeout,
             client_name=client_name,
             base_url=values["base_url"],
         )
         values["async_client"] = cohere.AsyncClient(
-            cohere_api_key,
+            api_key=values["cohere_api_key"].get_secret_value(),
             timeout=request_timeout,
             client_name=client_name,
             base_url=values["base_url"],

@@ -7,7 +7,7 @@ import cohere
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class CohereRerank(BaseDocumentCompressor):
@@ -35,11 +35,14 @@ class CohereRerank(BaseDocumentCompressor):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
-            cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+            values["cohere_api_key"] = convert_to_secret_str(
+                get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
             client_name = values["user_agent"]
-            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
+            values["client"] = cohere.Client(
+                api_key=values["cohere_api_key"].get_secret_value(),
+                client_name=client_name,
+            )
         return values
 
     def rerank(
